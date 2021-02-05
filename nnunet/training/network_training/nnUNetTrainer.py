@@ -702,15 +702,33 @@ class nnUNetTrainer(NetworkTrainer):
             self.online_eval_fp.append(list(fp_hard))
             self.online_eval_fn.append(list(fn_hard))
 
+    # def finish_online_evaluation(self):
+    #     self.online_eval_tp = np.sum(self.online_eval_tp, 0)
+    #     self.online_eval_fp = np.sum(self.online_eval_fp, 0)
+    #     self.online_eval_fn = np.sum(self.online_eval_fn, 0)
+
+    #     global_dc_per_class = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
+    #                                        zip(self.online_eval_tp, self.online_eval_fp, self.online_eval_fn)]
+    #                            if not np.isnan(i)]
+    #     self.all_val_eval_metrics.append(np.mean(global_dc_per_class))
+
+    #     self.print_to_log_file("Average global foreground Dice:", str(global_dc_per_class))
+    #     self.print_to_log_file("(interpret this as an estimate for the Dice of the different classes. This is not "
+    #                            "exact.)")
+
+    #     self.online_eval_foreground_dc = []
+    #     self.online_eval_tp = []
+    #     self.online_eval_fp = []
+    #     self.online_eval_fn = []
+
     def finish_online_evaluation(self):
         self.online_eval_tp = np.sum(self.online_eval_tp, 0)
         self.online_eval_fp = np.sum(self.online_eval_fp, 0)
         self.online_eval_fn = np.sum(self.online_eval_fn, 0)
 
         global_dc_per_class = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
-                                           zip(self.online_eval_tp, self.online_eval_fp, self.online_eval_fn)]
-                               if not np.isnan(i)]
-        self.all_val_eval_metrics.append(np.mean(global_dc_per_class))
+                                           zip(self.online_eval_tp, self.online_eval_fp, self.online_eval_fn)]]
+        self.all_val_eval_metrics.append(np.mean([i for i in global_dc_per_class if not np.isnan(i)]))
 
         self.print_to_log_file("Average global foreground Dice:", str(global_dc_per_class))
         self.print_to_log_file("(interpret this as an estimate for the Dice of the different classes. This is not "
