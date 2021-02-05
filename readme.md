@@ -43,8 +43,8 @@ standardized environment.
 For more information about nnU-Net, please read the following paper:
 
 
-    Fabian Isensee, Paul F. Jäger, Simon A. A. Kohl, Jens Petersen, Klaus H. Maier-Hein "Automated Design of Deep Learning 
-    Methods for Biomedical Image Segmentation" arXiv preprint arXiv:1904.08128 (2020).
+    Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2020). nnU-Net: a self-configuring method 
+    for deep learning-based biomedical image segmentation. Nature Methods, 1-9.
 
 Please also cite this paper if you are using nnU-Net for your research!
 
@@ -66,7 +66,7 @@ Please also cite this paper if you are using nnU-Net for your research!
     + [Run inference](#run-inference)
   * [How to run inference with pretrained models](#how-to-run-inference-with-pretrained-models)
   * [Examples](#examples)
-- [Extending/Changing nnU-Net](#extending-changing-nnu-net)
+- [Extending/Changing nnU-Net](#extending-or-changing-nnu-net)
 - [Information on run time and potential performance bottlenecks.](#information-on-run-time-and-potential-performance-bottlenecks)
 - [Common questions and issues](#common-questions-and-issues)
 
@@ -188,47 +188,60 @@ tens of minutes.
 nnU-Net trains all U-Net configurations in a 5-fold cross-validation. This enables nnU-Net to determine the 
 postprocessing and ensembling (see next step) on the training dataset. Per default, all U-Net configurations need to 
 be run on a given dataset. There are, however situations in which only some configurations (and maybe even without 
-running the cross-validation) are desired. See [FAQ](#faq) for more information.
+running the cross-validation) are desired. See [FAQ](documentation/common_questions.md) for more information.
 
 Note that not all U-Net configurations are created for all datasets. In datasets with small image sizes, the U-Net 
 cascade is omitted because the patch size of the full resolution U-Net already covers a large part of the input images.
 
 Training models is done with the `nnUNet_train` command. The general structure of the command is:
 ```bash
-nnUNet_train CONFIGURATION TRAINER_CLASS_NAME TASK_NAME_OR_ID FOLD (additional options)
+nnUNet_train CONFIGURATION TRAINER_CLASS_NAME TASK_NAME_OR_ID FOLD  --npz (additional options)
 ```
 
 CONFIGURATION is a string that identifies the requested U-Net configuration. TRAINER_CLASS_NAME is the name of the 
 model trainer. If you implement custom trainers (nnU-Net as a framework) you can specify your custom trainer here.
-TASK_NAME_OR_ID specifies what dataset should be trained on and FOLD specifies which fold of the 5-fold-crossvalidaton is trained.
+TASK_NAME_OR_ID specifies what dataset should be trained on and FOLD specifies which fold of the 5-fold-cross-validaton 
+is trained.
 
 nnU-Net stores a checkpoint every 50 epochs. If you need to continue a previous training, just add a `-c` to the 
 training command.
 
- 
+IMPORTANT: `--npz` makes the models save the softmax outputs during the final validation. It should only be used for trainings 
+where you plan to run `nnUNet_find_best_configuration` afterwards 
+(this is nnU-Nets automated selection of the best performing (ensemble of) configuration(s), see below). If you are developing new 
+trainer classes you may not need the softmax predictions and should therefore omit the `--npz` flag. Exported softmax 
+predictions are very large and therefore can take up a lot of disk space.
+If you ran initially without the `--npz` flag but now require the softmax predictions, simply run 
+```bash
+nnUNet_train CONFIGURATION TRAINER_CLASS_NAME TASK_NAME_OR_ID FOLD -val --npz
+```
+to generate them. This will only rerun the validation, not the training.
+
+See `nnUNet_train -h` for additional options.
+
 #### 2D U-Net
 For FOLD in [0, 1, 2, 3, 4], run:
 ```bash
-nnUNet_train 2d nnUNetTrainerV2 TaskXXX_MYTASK FOLD
+nnUNet_train 2d nnUNetTrainerV2 TaskXXX_MYTASK FOLD --npz
 ```
 
 #### 3D full resolution U-Net
 For FOLD in [0, 1, 2, 3, 4], run:
 ```bash
-nnUNet_train 3d_fullres nnUNetTrainerV2 TaskXXX_MYTASK FOLD
+nnUNet_train 3d_fullres nnUNetTrainerV2 TaskXXX_MYTASK FOLD --npz
 ```
 
 #### 3D U-Net cascade
 ##### 3D low resolution U-Net
 For FOLD in [0, 1, 2, 3, 4], run:
 ```bash
-nnUNet_train 3d_lowres nnUNetTrainerV2 TaskXXX_MYTASK FOLD
+nnUNet_train 3d_lowres nnUNetTrainerV2 TaskXXX_MYTASK FOLD --npz
 ```
 
 ##### 3D full resolution U-Net
 For FOLD in [0, 1, 2, 3, 4], run:
 ```bash
-nnUNet_train 3d_cascade_fullres nnUNetTrainerV2CascadeFullRes TaskXXX_MYTASK FOLD
+nnUNet_train 3d_cascade_fullres nnUNetTrainerV2CascadeFullRes TaskXXX_MYTASK FOLD --npz
 ```
 
 Note that the 3D full resolution U-Net of the cascade requires the five folds of the low resolution U-Net to be 
@@ -436,7 +449,7 @@ To get you started we compiled two simple to follow examples:
 
 Usability not good enough? Let us know!
 
-# Extending/Changing nnU-Net
+# Extending or Changing nnU-Net
 Please refer to [this](documentation/extending_nnunet.md) guide.
 
 # Information on run time and potential performance bottlenecks.

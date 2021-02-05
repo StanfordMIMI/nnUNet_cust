@@ -18,6 +18,7 @@ from time import sleep
 import numpy as np
 import torch
 from batchgenerators.utilities.file_and_folder_operations import *
+from nnunet.training.data_augmentation.data_augmentation_moreDA import get_moreDA_augmentation
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.nn.utils import clip_grad_norm_
@@ -26,7 +27,6 @@ from nnunet.evaluation.region_based_evaluation import evaluate_regions, get_brat
 from nnunet.network_architecture.generic_UNet import Generic_UNet
 from nnunet.network_architecture.initialization import InitWeights_He
 from nnunet.network_architecture.neural_network import SegmentationNetwork
-from nnunet.training.data_augmentation.default_data_augmentation import get_moreDA_augmentation
 from nnunet.training.dataloading.dataset_loading import unpack_dataset
 from nnunet.training.loss_functions.deep_supervision import MultipleOutputLoss2
 from nnunet.training.loss_functions.dice_loss import DC_and_BCE_loss, get_tp_fp_fn_tn, SoftDiceLoss
@@ -155,11 +155,12 @@ class nnUNetTrainerV2BraTSRegions(nnUNetTrainerV2):
     def validate(self, do_mirroring: bool = True, use_sliding_window: bool = True,
                  step_size: int = 0.5, save_softmax: bool = True, use_gaussian: bool = True, overwrite: bool = True,
                  validation_folder_name: str = 'validation_raw', debug: bool = False, all_in_gpu: bool = False,
-                 segmentation_export_kwargs: dict = None):
+                 segmentation_export_kwargs: dict = None, run_postprocessing_on_folds: bool = True):
         super().validate(do_mirroring=do_mirroring, use_sliding_window=use_sliding_window, step_size=step_size,
                                save_softmax=save_softmax, use_gaussian=use_gaussian,
                                overwrite=overwrite, validation_folder_name=validation_folder_name, debug=debug,
-                               all_in_gpu=all_in_gpu, segmentation_export_kwargs=segmentation_export_kwargs)
+                               all_in_gpu=all_in_gpu, segmentation_export_kwargs=segmentation_export_kwargs,
+                               run_postprocessing_on_folds=run_postprocessing_on_folds)
         # run brats specific validation
         output_folder = join(self.output_folder, validation_folder_name)
         evaluate_regions(output_folder, self.gt_niftis_folder, self.regions)
@@ -311,11 +312,12 @@ class nnUNetTrainerV2BraTSRegions_DDP(nnUNetTrainerV2_DDP):
     def validate(self, do_mirroring: bool = True, use_sliding_window: bool = True,
                  step_size: int = 0.5, save_softmax: bool = True, use_gaussian: bool = True, overwrite: bool = True,
                  validation_folder_name: str = 'validation_raw', debug: bool = False, all_in_gpu: bool = False,
-                 segmentation_export_kwargs: dict = None):
+                 segmentation_export_kwargs: dict = None, run_postprocessing_on_folds: bool = True):
         super().validate(do_mirroring=do_mirroring, use_sliding_window=use_sliding_window, step_size=step_size,
                                save_softmax=save_softmax, use_gaussian=use_gaussian,
                                overwrite=overwrite, validation_folder_name=validation_folder_name, debug=debug,
-                               all_in_gpu=all_in_gpu, segmentation_export_kwargs=segmentation_export_kwargs)
+                               all_in_gpu=all_in_gpu, segmentation_export_kwargs=segmentation_export_kwargs,
+                               run_postprocessing_on_folds=run_postprocessing_on_folds)
         # run brats specific validation
         output_folder = join(self.output_folder, validation_folder_name)
         evaluate_regions(output_folder, self.gt_niftis_folder, self.regions)
