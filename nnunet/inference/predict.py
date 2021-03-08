@@ -181,6 +181,9 @@ def predict_cases(model, list_of_lists, output_filenames, folds, save_npz, num_t
     print("loading parameters for folds,", folds)
     trainer, params = load_model_and_checkpoint_files(model, folds, mixed_precision=mixed_precision, checkpoint_name=checkpoint_name)
 
+    # Deactivate benchmark to avoid CUDA using a lot of VRAM in the beginning of prediction.
+    torch.backends.cudnn.benchmark = False
+
     if segmentation_export_kwargs is None:
         if 'segmentation_export_params' in trainer.plans.keys():
             force_separate_z = trainer.plans['segmentation_export_params']['force_separate_z']
