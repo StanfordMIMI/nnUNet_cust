@@ -36,7 +36,7 @@ class ExperimentPlanner2D_v21(ExperimentPlanner2D):
         dataset_num_voxels = np.prod(new_median_shape, dtype=np.int64) * num_cases
         input_patch_size = new_median_shape[1:]
         # use this if working on 2D images (e.g. xray)
-        input_patch_size = (512, 512)
+        # input_patch_size = (512, 512)
 
         network_num_pool_per_axis, pool_op_kernel_sizes, conv_kernel_sizes, new_shp, \
         shape_must_be_divisible_by = get_pool_and_conv_props(current_spacing[1:], input_patch_size,
