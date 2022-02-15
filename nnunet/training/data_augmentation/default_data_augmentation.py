@@ -143,6 +143,7 @@ def get_default_augmentation(dataloader_train, dataloader_val, patch_size, param
     if params.get("dummy_2D") is not None and params.get("dummy_2D"):
         tr_transforms.append(Convert3DTo2DTransform())
 
+    # Set order_data=0 and order_seg=0 for some more speed for cascade???
     tr_transforms.append(SpatialTransform(
         patch_size, patch_center_dist_from_border=None, do_elastic_deform=params.get("do_elastic"),
         alpha=params.get("elastic_deform_alpha"), sigma=params.get("elastic_deform_sigma"),
@@ -175,6 +176,7 @@ def get_default_augmentation(dataloader_train, dataloader_val, patch_size, param
         tr_transforms.append(MoveSegAsOneHotToData(1, params.get("all_segmentation_labels"), 'seg', 'data'))
         if params.get("cascade_do_cascade_augmentations") and not None and params.get(
                 "cascade_do_cascade_augmentations"):
+            # Remove the following transforms to remove cascade DA ??
             tr_transforms.append(ApplyRandomBinaryOperatorTransform(
                 channel_idx=list(range(-len(params.get("all_segmentation_labels")), 0)),
                 p_per_sample=params.get("cascade_random_binary_transform_p"),
