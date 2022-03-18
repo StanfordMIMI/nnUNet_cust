@@ -18,11 +18,9 @@ import torch
 from nnunet.training.loss_functions.crossentropy import RobustCrossEntropyLoss
 from nnunet.training.network_training.nnUNet_variants.architectural_variants.nnUNetTrainerV2_noDeepSupervision import \
     nnUNetTrainerV2_noDeepSupervision
-from nnunet.training.network_training.nnUNet_variants.profiling.nnUNetTrainerV2_2epochs import nnUNetTrainerV2_5epochs
+from nnunet.training.network_training.nnUNet_variants.benchmarking.nnUNetTrainerV2_2epochs import nnUNetTrainerV2_5epochs
 from torch.cuda.amp import autocast
-from torch.nn.utils import clip_grad_norm_
 import numpy as np
-from torch import nn
 
 
 class nnUNetTrainerV2_5epochs_dummyLoad(nnUNetTrainerV2_5epochs):
@@ -68,6 +66,14 @@ class nnUNetTrainerV2_5epochs_dummyLoad(nnUNetTrainerV2_5epochs):
         return l.detach().cpu().numpy()
 
 
+class nnUNetTrainerV2_2epochs_dummyLoad(nnUNetTrainerV2_5epochs_dummyLoad):
+    def __init__(self, plans_file, fold, output_folder=None, dataset_directory=None, batch_dice=True, stage=None,
+                 unpack_data=True, deterministic=True, fp16=False):
+        super().__init__(plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
+                         deterministic, fp16)
+        self.max_num_epochs = 2
+
+
 class nnUNetTrainerV2_5epochs_dummyLoadCEnoDS(nnUNetTrainerV2_noDeepSupervision):
     def __init__(self, plans_file, fold, output_folder=None, dataset_directory=None, batch_dice=True, stage=None,
                  unpack_data=True, deterministic=True, fp16=False):
@@ -105,25 +111,34 @@ class nnUNetTrainerV2_5epochs_dummyLoadCEnoDS(nnUNetTrainerV2_noDeepSupervision)
 
         self.optimizer.zero_grad()
 
-        output = self.network(data)
+        if self.fp16:
+            with autocast():
+                output = self.network(data)
+                del data
+                l = self.loss(output, target)
 
-        del data
-        loss = self.loss(output, target)
+            if do_backprop:
+                self.amp_grad_scaler.scale(l).backward()
+                self.amp_grad_scaler.unscale_(self.optimizer)
+                torch.nn.utils.clip_grad_norm_(self.network.parameters(), 12)
+                self.amp_grad_scaler.step(self.optimizer)
+                self.amp_grad_scaler.update()
+        else:
+            output = self.network(data)
+            del data
+            l = self.loss(output, target)
+
+            if do_backprop:
+                l.backward()
+                torch.nn.utils.clip_grad_norm_(self.network.parameters(), 12)
+                self.optimizer.step()
 
         if run_online_evaluation:
             self.run_online_evaluation(output, target)
+
         del target
 
-        if do_backprop:
-            if not self.fp16 or amp is None or not torch.cuda.is_available():
-                loss.backward()
-            else:
-                with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            _ = clip_grad_norm_(self.network.parameters(), 12)
-            self.optimizer.step()
-
-        return loss.detach().cpu().numpy()
+        return l.detach().cpu().numpy()
 
     def run_online_evaluation(self, output, target):
         pass

@@ -24,12 +24,13 @@ import argparse
 
 def collect_cv_niftis(cv_folder: str, output_folder: str, validation_folder_name: str = 'validation_raw',
                       folds: tuple = (0, 1, 2, 3, 4)):
-    folders_folds = [join(cv_folder, "fold_%d" % i) for i in folds]
-
-    assert all([isdir(i) for i in folders_folds]), "some folds are missing"
-
-    # now for each fold, read the postprocessing json. this will tell us what the name of the validation folder is
     validation_raw_folders = [join(cv_folder, "fold_%d" % i, validation_folder_name) for i in folds]
+    exist = [isdir(i) for i in validation_raw_folders]
+
+    if not all(exist):
+        raise RuntimeError("some folds are missing. Please run the full 5-fold cross-validation. "
+                           "The following folds seem to be missing: %s" %
+                           [i for j, i in enumerate(folds) if not exist[j]])
 
     # now copy all raw niftis into cv_niftis_raw
     maybe_mkdir_p(output_folder)
@@ -71,7 +72,7 @@ def consolidate_folds(output_folder_base, validation_folder_name: str = 'validat
         'mean']
     classes = [int(i) for i in summary_fold0.keys()]
     niftis = subfiles(output_folder_raw, join=False, suffix=".nii.gz")
-    test_pred_pairs = [(join(output_folder_gt, i), join(output_folder_raw, i)) for i in niftis]
+    test_pred_pairs = [(join(output_folder_raw, i), join(output_folder_gt, i)) for i in niftis]
 
     # determine_postprocessing needs a summary.json file in the folder where the raw predictions are. We could compute
     # that from the summary files of the five folds but I am feeling lazy today

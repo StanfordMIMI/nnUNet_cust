@@ -1,5 +1,18 @@
 # FAQ
 
+- [FAQ](#faq)
+  * [Where can I find the segmentation metrics of my experiments?](#where-can-i-find-the-segmentation-metrics-of-my-experiments-)
+  * [What postprocessing is selected?](#what-postprocessing-is-selected-)
+  * [Evaluating test set results](#evaluating-test-set-results)
+  * [Creating and managing data splits](#creating-and-managing-data-splits)
+  * [How can I swap component XXX (for example the loss) of nnU-Net?](#how-can-i-swap-component-xxx--for-example-the-loss--of-nnu-net-)
+  * [How does nnU-Net handle multi-modal images?](#how-does-nnu-net-handle-multi-modal-images-)
+  * [Why does nnU-Net not use all my GPU memory?](#why-does-nnu-net-not-use-all-my-gpu-memory-)
+  * [Do I need to always run all U-Net configurations?](#do-i-need-to-always-run-all-u-net-configurations-)
+  * [Sharing Models](#sharing-models)
+  * [Can I run nnU-Net on smaller GPUs?](#can-i-run-nnu-net-on-smaller-gpus-)
+  * [Why is no 3d_lowres model created?](#why-is-no-3d-lowres-model-created-)
+
 ## Where can I find the segmentation metrics of my experiments?
 **Results for the validation sets of each fold** are stored in the respective output folder after the training is completed. For example, this could be. 
 `${RESULTS_FOLDER}/nnUNet/3d_fullres/Task003_Liver/nnUNetTrainerV2__nnUNetPlansv2.1/fold_0`. After training there will
@@ -129,7 +142,7 @@ performance consistently enough to make that the default. If you really want to 
 
 1) Manually edit the plans files to increase the batch size. A larger batch size gives better (less noisy) gradients 
 and may improve your model performance if the dataset is large. Note that nnU-Net always runs for 1000 epochs with 250 
-iterations each (25000 iterations). The training time thus scales approximately linearly with the batch size 
+iterations each (250000 iterations). The training time thus scales approximately linearly with the batch size 
 (batch size 4 is going to need twice as long for training than batch size 2!)
 
 2) Manually edit the plans files to increase the patch size. This one is tricky and should only been attempted if you 
